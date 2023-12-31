@@ -111,16 +111,29 @@ def divideset(part: Data, column: int, value) -> Tuple[Data, Data]:
     t7: Divide a set on a specific column. Can handle
     numeric or categorical values
     """
-    if isinstance(value, (int, float)):
+    """if isinstance(value, (int, float)):
         split_function = _split_numeric
     else:
         split_function = _split_categorical
     #...
-    return (set1, set2)
+    return (set1, set2)"""
+
+    if isinstance(value, (int, float)):
+        split_function = _split_numeric
+    else:
+        split_function = _split_categorical
+        # Split "part" according "split_function"
+    set1, set2 = [], []
+    for row in part:  # For each row in the dataset
+        if split_function(row, column, value):  # If it matches the criteria
+            set1.append(row)  # Add it to the first set
+        else:
+            set2.append(row)  # Add it to the second set
+    return (set1, set2)  # Return both sets
 
 
 class DecisionNode:
-    def __init__(self, col=-1, value=None, results=None, tb=None, fb=None):
+    def __init__(self, col=-1, value=None, results=None, tb=None, fb=None, split_quality=0):
         """
         t8: We have 5 member variables:
         - col is the column index which represents the
@@ -132,7 +145,13 @@ class DecisionNode:
         - results is a dictionary that stores the result
           for this branch. Is None except for the leaves
         """
-        raise NotImplementedError
+
+        self.col = col
+        self.value = value
+        self.results = results
+        self.tb = tb
+        self.fb = fb
+        self.split_quality = split_quality  # How good is the split
 
 
 def buildtree(part: Data, scoref=entropy, beta=0):
@@ -141,18 +160,35 @@ def buildtree(part: Data, scoref=entropy, beta=0):
     that builds a decision tree using any of the impurity measures we
     have seen. The stop criterion is max_s\Delta i(s,t) < \beta
     """
+
     if len(part) == 0:
         return DecisionNode()
 
     current_score = scoref(part)
-    
-    # Set up some variables to track the best criteria
-    best_gain = 0
+    if current_score == 0:
+        return DecisionNode(results=unique_counts(part), split_quality=0)  # Pure node
+
+    best_gain = 0.0
     best_criteria = None
     best_sets = None
-    # ...
-    #else:
-    #    return DecisionNode(results=unique_counts(part))
+    column_count = len(part[0]) - 1  # -1 because the last column is the label
+    for col in range(0, column_count):  # Search the best parameters to use
+        column_values = {}
+        for row in part:
+            column_values[row[col]] = 1
+        for value in column_values.keys():
+            (set1, set2) = divideset(part, col, value)
+            p = float(len(set1)) / len(part)
+            gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
+            if gain > best_gain and len(set1) > 0 and len(set2) > 0:
+                best_gain = gain
+                best_criteria = (col, value)
+                best_sets = (set1, set2)
+    if best_gain > beta:
+        return DecisionNode(col=best_criteria[0], value=best_criteria[1],
+                            tb=buildtree(best_sets[0]), fb=buildtree(best_sets[1]), split_quality=best_gain)
+    else:
+        return DecisionNode(results=unique_counts(part), split_quality=best_gain)
 
 
 def iterative_buildtree(part: Data, scoref=entropy, beta=0):
