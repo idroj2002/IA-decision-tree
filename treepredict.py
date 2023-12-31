@@ -103,7 +103,7 @@ def _split_numeric(prototype: List, column: int, value):
 
 
 def _split_categorical(prototype: List, column: int, value: str):
-    raise NotImplementedError
+    return prototype[column] == value
 
 
 def divideset(part: Data, column: int, value) -> Tuple[Data, Data]:
@@ -166,7 +166,7 @@ def buildtree(part: Data, scoref=entropy, beta=0):
 
     current_score = scoref(part)
     if current_score == 0:
-        return DecisionNode(results=unique_counts(part), split_quality=0)  # Pure node
+        return DecisionNode(results=unique_counts(part))  # Pure node
 
     best_gain = 0.0
     best_criteria = None
@@ -195,6 +195,52 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
     """
     t10: Define the iterative version of the function buildtree
     """
+
+    if len(part) == 0:
+        return decision_node.DecisionNode(results=unique_counts(part))  # Pure node
+
+    stack = Stack()
+    node_stack = Stack()
+    stack.push((0, part, None, 0))
+    while not stack.is_empty():
+        level, data, criteria, split_quality = stack.pop()
+        if level == 0:
+            current_score = scoref(data)
+            if current_score == 0:
+                node_stack.push(DecisionNode(results=unique_counts(data), split_quality=0))  # Pure node
+            else:
+                best_gain = 0.0
+                best_criteria = None
+                best_sets = None
+                column_count = len(data[0]) - 1
+                for col in range(0, column_count):  # Search for the best parameters
+                    column_values = {}
+                    for row in data:
+                        column_values[row[col]] = 1
+                    for value in column_values.keys():
+                        (set1, set2) = divideset(data, col, value)
+                        p = float(len(set1)) / len(data)
+                        gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
+                        if gain > best_gain and len(set1) > 0 and len(set2) > 0:
+                            best_gain = gain
+                            best_criteria = (col, value)
+                            best_sets = (set1, set2)
+                if best_gain > beta:
+                    stack.push((1, data, best_criteria, best_gain))
+                    stack.push((0, best_sets[0], best_criteria, best_gain))
+                    stack.push((0, best_sets[1], best_criteria, best_gain))
+                else:
+                    node_stack.push(DecisionNode(results=unique_counts(data)))
+        elif level == 1:
+            true_branch = node_stack.pop()
+            false_branch = node_stack.pop()
+            node_stack.push(DecisionNode(col=criteria[0], value=criteria[1], tb=true_branch, fb=false_branch,
+                                         split_quality=split_quality))
+            if len(data) == len(part):
+                return node_stack.pop()  # Return the root node
+
+
+
     raise NotImplementedError
 
 
@@ -262,8 +308,10 @@ def main():
     # print(entropy([data[0]]))
 
     headers, data = read(filename)
-    tree = buildtree(data)
-    print_tree(tree, headers)
+    recursive_tree = buildtree(data)
+    print_tree(recursive_tree, headers)
+    #iterative_tree = iterative_buildtree(data)
+    #print_tree(iterative_tree, headers)
 
 
 if __name__ == "__main__":
