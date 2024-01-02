@@ -307,7 +307,7 @@ def main():
     try:
         filename = sys.argv[1]
     except IndexError:
-        filename = "decision_tree_example.txt"
+        filename = "iris.csv"
 
     # header, data = read(filename)
     # print_data(header, data)
