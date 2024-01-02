@@ -173,10 +173,11 @@ def buildtree(part: Data, scoref=entropy, beta=0):
     best_sets = None
     column_count = len(part[0]) - 1  # -1 because the last column is the label
     for col in range(0, column_count):  # Search the best parameters to use
-        column_values = {}
+        column_values = set()
         for row in part:
-            column_values[row[col]] = 1
-        for value in column_values.keys():
+            column_values.add(row[col])
+
+        for value in column_values:
             (set1, set2) = divideset(part, col, value)
             p = float(len(set1)) / len(part)
             gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
