@@ -3,6 +3,8 @@ import sys
 import collections
 from math import log2
 from typing import List, Tuple
+from Stack import Stack
+import random
 
 # Used for typing
 Data = List[List]
@@ -197,7 +199,7 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
     """
 
     if len(part) == 0:
-        return decision_node.DecisionNode(results=unique_counts(part))  # Pure node
+        return DecisionNode(results=unique_counts(part))  # Pure node
 
     stack = Stack()
     node_stack = Stack()
@@ -245,8 +247,20 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
 
 
 def classify(tree, values):
-    raise NotImplementedError
-
+    if tree.results is not None:
+        maximum = max(tree.results.values())
+        labels = [k for k, v in tree.results.items() if v == maximum]
+        return random.choice(labels)
+    if isinstance(tree.value, (int, float)):
+        if _split_numeric(values, tree.col, tree.value):
+            return classify(tree.tb, values)
+        else:
+            return classify(tree.fb, values)
+    else:
+        if _split_categorical(values, tree.col, tree.value):
+            return classify(tree.tb, values)
+        else:
+            return classify(tree.fb, values)
 
 def print_tree(tree, headers=None, indent=""):
     """
