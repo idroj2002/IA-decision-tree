@@ -205,10 +205,10 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
 
     stack = Stack()
     node_stack = Stack()
-    stack.push((0, part, None, 0))
+    stack.push((False, part, None, 0))
     while not stack.is_empty() > 0:
-        level, data, criteria, split_quality = stack.pop()
-        if level == 0:
+        connection_node, data, criteria, split_quality = stack.pop()
+        if not connection_node:
             current_score = scoref(data)
             if current_score == 0:
                 node_stack.push(DecisionNode(results=unique_counts(data), split_quality=0))  # Pure node
@@ -230,12 +230,12 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
                             best_criteria = (col, value)
                             best_sets = (set1, set2)
                 if best_gain > beta:
-                    stack.push((1, data, best_criteria, best_gain))
-                    stack.push((0, best_sets[0], best_criteria, best_gain))
-                    stack.push((0, best_sets[1], best_criteria, best_gain))
+                    stack.push((True, data, best_criteria, best_gain))
+                    stack.push((False, best_sets[0], best_criteria, best_gain))
+                    stack.push((False, best_sets[1], best_criteria, best_gain))
                 else:
                     node_stack.push(DecisionNode(results=unique_counts(data)))
-        elif level == 1:
+        else:
             true_branch = node_stack.pop()
             false_branch = node_stack.pop()
             node_stack.push(DecisionNode(col=criteria[0], value=criteria[1], tb=true_branch, fb=false_branch,
