@@ -243,7 +243,6 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
             if len(data) == len(part):
                 return node_stack.pop()  # Return the root node
 
-
 def classify(tree, values):
     if tree.results is not None:
         maximum = max(tree.results.values())
@@ -259,6 +258,7 @@ def classify(tree, values):
             return classify(tree.tb, values)
         else:
             return classify(tree.fb, values)
+
 
 def print_tree(tree, headers=None, indent=""):
     """
@@ -320,6 +320,7 @@ def main():
     # print(entropy([data[0]]))
 
     headers, data = read(filename)
+
     recursive_tree = buildtree(data)
     print_tree(recursive_tree, headers)
     print("Iterative buildtree:")

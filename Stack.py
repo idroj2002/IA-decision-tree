@@ -5,6 +5,7 @@ class Stack:
     """
     Stack data structure
     """
+
     def __init__(self):
         self.stack = deque()
 
