@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-import sys
 import collections
+import evaluation
+import random
+import sys
 from math import log2
 from typing import List, Tuple
+
 from Stack import Stack
-import random
 
 # Used for typing
 Data = List[List]
@@ -243,7 +245,8 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
             if len(data) == len(part):
                 return node_stack.pop()  # Return the root node
 
-def classify(tree, values):
+
+def classify(tree: DecisionNode, values: List):
     if tree.results is not None:
         maximum = max(tree.results.values())
         labels = [k for k, v in tree.results.items() if v == maximum]
@@ -260,7 +263,7 @@ def classify(tree, values):
             return classify(tree.fb, values)
 
 
-def print_tree(tree, headers=None, indent=""):
+def print_tree(tree: DecisionNode, headers: List[str] = None, indent=""):
     """
     t11: Include the following function
     """
@@ -281,7 +284,7 @@ def print_tree(tree, headers=None, indent=""):
         print_tree(tree.fb, headers, indent + "  ")
 
 
-def print_data(headers, data):
+def print_data(headers: List[str], data: Data):
     colsize = 15
     print('-' * ((colsize + 1) * len(headers) + 1))
     print("|", end="")
@@ -298,6 +301,37 @@ def print_data(headers, data):
                 print(value.ljust(colsize), end="|")
         print("")
     print('-' * ((colsize + 1) * len(headers) + 1))
+
+
+def print_trees(data, headers):
+    print("----- TREES -----")
+    tree = buildtree(data)
+    print("   - RECURSIVE -   ")
+    print_tree(tree, headers)
+    print("\n\n")
+    print("   - ITERATIVE -   ")
+    it_tree = iterative_buildtree(data)
+    print_tree(it_tree, headers)
+
+
+def predict_data(data):
+    print("----- PREDICTIONS -----")
+    train, test = evaluation.train_test_split(data, 0.2)
+    tree = buildtree(train)
+    for row in test:
+        prediction = classify(tree, row[:-1])
+        print("Prediction for ", row, "is: ", prediction)
+
+
+def testing(data):
+    print("----- TESTING -----")
+    train, test = evaluation.train_test_split(data, 0.2)
+    tree = buildtree(train)
+    print("Data split between train and test with 0.2 test size")
+    train_accuracy = evaluation.get_accuracy(tree, train)
+    print("Accuracy with training data: " + "{:.2f}".format(train_accuracy * 100) + " %")
+    test_accuracy = evaluation.get_accuracy(tree, test)
+    print("Accuracy with testing data: " + "{:.2f}".format(test_accuracy * 100) + " %")
 
 
 def main():
