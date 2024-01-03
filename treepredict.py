@@ -10,7 +10,7 @@ import random
 Data = List[List]
 
 
-def read(file_name: str, separator: str = ",") -> Tuple[List[str], Data]:
+def read(file_name: str, separator1: str = ",", separator2: str = "\t") -> Tuple[List[str], Data]:
     """
     t3: Load the data into a bidimensional list.
     Return the headers as a list, and the data
@@ -19,7 +19,8 @@ def read(file_name: str, separator: str = ",") -> Tuple[List[str], Data]:
     data = []
     with open(file_name, "r") as fh:
         for line in fh:
-            values = line.strip().split(separator)
+            line = line.replace(separator2, separator1)
+            values = line.strip('').split(separator1)
             if header is None:
                 header = values
                 continue
@@ -205,7 +206,7 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
     stack = Stack()
     node_stack = Stack()
     stack.push((0, part, None, 0))
-    while not stack.is_empty():
+    while not stack.is_empty() > 0:
         level, data, criteria, split_quality = stack.pop()
         if level == 0:
             current_score = scoref(data)
@@ -217,10 +218,10 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
                 best_sets = None
                 column_count = len(data[0]) - 1
                 for col in range(0, column_count):  # Search for the best parameters
-                    column_values = {}
+                    column_values = set()
                     for row in data:
-                        column_values[row[col]] = 1
-                    for value in column_values.keys():
+                        column_values.add(row[col])
+                    for value in column_values:
                         (set1, set2) = divideset(data, col, value)
                         p = float(len(set1)) / len(data)
                         gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
@@ -241,10 +242,6 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
                                          split_quality=split_quality))
             if len(data) == len(part):
                 return node_stack.pop()  # Return the root node
-
-
-
-    raise NotImplementedError
 
 
 def classify(tree, values):
@@ -325,8 +322,9 @@ def main():
     headers, data = read(filename)
     recursive_tree = buildtree(data)
     print_tree(recursive_tree, headers)
-    #iterative_tree = iterative_buildtree(data)
-    #print_tree(iterative_tree, headers)
+    print("Iterative buildtree:")
+    iterative_tree = iterative_buildtree(data)
+    print_tree(iterative_tree, headers)
 
 
 if __name__ == "__main__":

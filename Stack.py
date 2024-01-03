@@ -12,7 +12,7 @@ class Stack:
         self.stack.append(item)
 
     def pop(self):
-        self.stack.pop()
+        return self.stack.pop()
 
     def is_empty(self):
         return len(self.stack) == 0
