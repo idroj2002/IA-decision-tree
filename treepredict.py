@@ -242,8 +242,6 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
             if len(data) == len(part):
                 return node_stack.pop()  # Return the root node
 
-
-
     raise NotImplementedError
 
 
@@ -262,6 +260,7 @@ def classify(tree, values):
             return classify(tree.tb, values)
         else:
             return classify(tree.fb, values)
+
 
 def print_tree(tree, headers=None, indent=""):
     """
@@ -323,10 +322,10 @@ def main():
     # print(entropy([data[0]]))
 
     headers, data = read(filename)
-    recursive_tree = buildtree(data)
-    print_tree(recursive_tree, headers)
-    #iterative_tree = iterative_buildtree(data)
-    #print_tree(iterative_tree, headers)
+    # recursive_tree = buildtree(data)
+    # print_tree(recursive_tree, headers)
+    iterative_tree = iterative_buildtree(data)
+    print_tree(iterative_tree, headers)
 
 
 if __name__ == "__main__":
