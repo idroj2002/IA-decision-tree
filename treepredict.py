@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import collections
+from decision_node import DecisionNode
+from prune import prune_tree
 import evaluation
 import random
 import sys
@@ -181,12 +183,16 @@ def iterative_build_tree(part: Data, score_f=entropy, beta=0):
     """
 
     if len(part) == 0:
+        return DecisionNode()
+
+    current_score = score_f(part)
+    if current_score == 0:
         return DecisionNode(results=unique_counts(part))  # Pure node
 
     stack = Stack()
     node_stack = Stack()
     stack.push((False, part, None, 0))
-    while not stack.is_empty() > 0:
+    while not stack.is_empty():
         connection_node, data, criteria, split_quality = stack.pop()
         if not connection_node:
             current_score = score_f(data)
@@ -245,6 +251,10 @@ def print_tree(tree: DecisionNode, headers: List[str] = None, indent=""):
     """
     t11: Include the following function
     """
+    if tree is None:
+        print("None")
+        return
+
     # Is this a leaf node?
     if tree.results is not None:
         print(tree.results)
@@ -271,6 +281,9 @@ def print_trees(headers: List[str], data: Data):
     print("   - ITERATIVE -   ")
     it_tree = iterative_build_tree(data)
     print_tree(it_tree, headers)
+    print("   - PRUNED TREE -   ")
+    prune_tree(tree, 0.8)
+    print_tree(tree, headers)
 
 
 def print_data(headers: List[str], data: Data):

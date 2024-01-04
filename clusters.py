@@ -1,6 +1,8 @@
 from typing import Tuple, List
 from math import sqrt
 import sys
+import random
+import matplotlib.pyplot as plt
 
 
 def readfile(filename: str) -> Tuple[List, List, List]:
@@ -122,26 +124,26 @@ def print_clust(clust: BiCluster, labels=None, n=0):
 
 
 # ......... K-MEANS ..........
-def kcluster(rows,distance=pearson,k=4):
+def kcluster(rows, distance=pearson, k=4):
     # Determine the minimum and maximum values for each point
-    ranges=[(min([row[i] for row in rows]),
-    max([row[i] for row in rows])) for i in range(len(rows[0]))]
+    ranges = [(min([row[i] for row in rows]),
+               max([row[i] for row in rows])) for i in range(len(rows[0]))]
 
     # Create k randomly placed centroids
-    clusters=[[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0]
-    for i in range(len(rows[0]))] for j in range(k)]
+    clusters = [[random.random() * (ranges[i][1] - ranges[i][0]) + ranges[i][0]
+                 for i in range(len(rows[0]))] for j in range(k)]
 
     last_matches = None
+    best_matches = [[] for i in range(k)]
     for t in range(100):
-        best_matches = [[] for i in range(k)]
-
         # Find which centroid is the closest for each row
         for j in range(len(rows)):
             row = rows[j]
             best_match = 0
             for i in range(k):
                 d = distance(clusters[i], row)
-            if d < distance(clusters[best_match], row): best_match = i
+                if d < distance(clusters[best_match], row):
+                    best_match = i
             best_matches[best_match].append(j)
 
         # If the results are the same as last time, done
@@ -160,6 +162,7 @@ def kcluster(rows,distance=pearson,k=4):
             clusters[i] = avgs
     return best_matches
 
+
 class KMeans:
     def __init__(self, rows, distance=euclidean_squared, k=4):
         self.rows = rows
@@ -167,61 +170,64 @@ class KMeans:
         self.k = k
         self.clusters = None
 
-    def start_configuration(self, iterations=10, bestresult=None):
+    def start_conf(self, iterations=10, best_result=None):
         for _ in range(iterations):
-            initial_centroids = self.centroids_inicialization()
-            centroids, totaldistance = self.assign_cluster(initial_centroids)  # Centroids and total distance
+            initial_centroids = self.centroids_init()
+            centroids, total_distance = self.assign_cluster(initial_centroids)  # Centroids and total distance
 
-            if bestresult is None or totaldistance > bestresult[
-                1]:  # If best result is None or total distance is greater than best result
-                bestresult = (centroids, totaldistance)  # Update best result
+            if best_result is None or total_distance > best_result[1]:  # If best result is None or total distance is
+                # greater than best result
+                best_result = (centroids, total_distance)  # Update best result
 
-        return bestresult
+        return best_result
 
-    def centroids_inicialization(self):  # Random centroids
+    def centroids_init(self):  # Random centroids
         ranges = [(min([row[i] for row in self.rows]),
                    max([row[i] for row in self.rows])) for i in range(len(self.rows[0]))]  # Get ranges for each column
 
         centroids = [[random.random() * (ranges[i][1] - ranges[i][0]) + ranges[i][0]
-                      for i in range(len(self.rows[0]))] for j in range(self.k)]  # Get random centroids
+                      for i in range(len(self.rows[0]))] for _ in range(self.k)]  # Get random centroids
 
         return centroids
 
-    def assign_cluster(self, centroids, iterations=100, lastmatches=None):
+    def assign_cluster(self, centroids, iterations=100, last_matches=None):
+        matches = None
+        distances = None
+
         for _ in range(iterations):
             # print("Iteració %i" % t)
             # print(centroids[0][0])
-            distances, matches = self.best_centroid(centroids)
+            distances, matches = self.best_centroids(centroids)
 
-            if matches == lastmatches:  # If matches are the same as last matches stop
+            if matches == last_matches:  # If matches are the same as last matches stop
                 break
-            lastmatches = matches
+            last_matches = matches
 
             self.update_centroids(centroids, matches)  # update centroids
 
         self.clusters = matches
-        return (centroids, sum(distances))
+        return centroids, sum(distances)
 
-    def best_centroid(self, centroids):  # Get best centroid for each row
-        bestmatches = [[] for i in range(len(centroids))]
-        bestdistances = [0 for i in range(len(self.rows))]
+    def best_centroids(self, centroids):  # Find which centroid is the closest for each row
+        best_matches = [[] for _ in range(self.k)]
+        best_distances = [0 for _ in range(len(self.rows))]
 
-        for idrow, row in enumerate(self.rows):
-            bestmatch = 0
-            bestdistance = self.distance(centroids[0], row)
+        for id_row, row in enumerate(self.rows):
+            best_match = 0
+            best_distance = self.distance(centroids[0], row)
 
             # Find the closest centroid
             for centroid_id, centroid in enumerate(centroids):
                 distance = self.distance(centroid, row)
-                if distance > self.distance(centroids[bestmatch], row):
-                    bestmatch = centroid_id
-                    bestdistance = distance
+                if distance > self.distance(centroids[best_match], row):
+                    best_match = centroid_id
+                    best_distance = distance
 
             # Store results
-            bestdistances[idrow] = bestdistance
-            bestmatches[bestmatch].append(idrow)
+            best_distances[id_row] = best_distance
+            best_matches[best_match].append(id_row)
 
-        return (bestdistances, bestmatches)
+        return best_distances, best_matches
 
     def update_centroids(self, centroids, matches):
         # For each centroid
@@ -230,10 +236,10 @@ class KMeans:
 
             if len(matches[centroid]) > 0:
                 # For each item in the cluster
-                for rowid in matches[centroid]:
+                for row_id in matches[centroid]:
                     # Add each value to the average
-                    for attrid in range(len(self.rows[rowid])):
-                        avgs[attrid] += self.rows[rowid][attrid]
+                    for attr_id in range(len(self.rows[row_id])):
+                        avgs[attr_id] += self.rows[row_id][attr_id]
 
                 # Divide by number of items to get the average
                 for j in range(len(avgs)):
@@ -243,6 +249,21 @@ class KMeans:
                     centroids[centroid] = avgs
 
 
+def elbow(data, begin, end, incr, restarts):  # Elbow method to find the best k
+    total_distances = []
+    for i in range(begin, end, incr):
+        kmeans = KMeans(data, k=i)
+        _, total_distance = kmeans.start_conf(iterations=restarts)
+        total_distances.append(total_distance)
+    return total_distances
+
+
+def plot_elbow(data, begin, end, incr, restarts):  # Plot elbow method
+    total_distances = elbow(data, begin, end, incr, restarts)
+    plt.plot(range(begin, end, incr), total_distances)
+    plt.show()
+
+
 def main():
     try:
         filename = sys.argv[1]
@@ -250,10 +271,36 @@ def main():
         filename = "blogdata_full.txt"
 
     row_names, headers, data = readfile(filename)
-    cluster, centroids, distances_sum = hcluster(data)
-    print_clust(cluster, row_names)
-    print(centroids)
-    print(distances_sum)
+    kmeans = KMeans(data)
+    initial_centroids = kmeans.centroids_init()
+    """print("Initial centroids:")
+    for centroid in initial_centroids:
+        print(centroid)
+    print()"""
+    centroids, total_distance = kmeans.assign_cluster(initial_centroids)
+    """print("Final centroids: ")
+    for centroid in centroids:
+        print(centroid)
+    print("Total distance: %f" % totaldistance)
+    print()
+    """
+
+    print("Total distance: %f" % total_distance)
+
+    restarts = 10
+    kmeans = KMeans(data)
+    centroids, total_distance = kmeans.start_conf(iterations=restarts)
+    print("%i Restarts -> Distance to centroids: %2.3f\n"
+          % (restarts, total_distance))
+
+    result = elbow(data, 1, 10, 1, restarts)
+    print("Elbow method results: " + str(result))
+
+    for i in range(len(result)):
+        print("%i Clusters - %i Restarts -> Total Distance is: %2.3f"
+              % (i + 1, restarts, result[i]))
+
+    plot_elbow(data, 1, 10, 1, restarts)
 
 
 if __name__ == "__main__":
