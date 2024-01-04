@@ -4,6 +4,7 @@ import collections
 from math import log2
 from typing import List, Tuple
 from Stack import Stack
+from decision_node import DecisionNode
 import random
 
 # Used for typing
@@ -135,28 +136,6 @@ def divideset(part: Data, column: int, value) -> Tuple[Data, Data]:
     return (set1, set2)  # Return both sets
 
 
-class DecisionNode:
-    def __init__(self, col=-1, value=None, results=None, tb=None, fb=None, split_quality=0):
-        """
-        t8: We have 5 member variables:
-        - col is the column index which represents the
-          attribute we use to split the node
-        - value corresponds to the answer that satisfies
-          the question
-        - tb and fb are internal nodes representing the
-          positive and negative answers, respectively
-        - results is a dictionary that stores the result
-          for this branch. Is None except for the leaves
-        """
-
-        self.col = col
-        self.value = value
-        self.results = results
-        self.tb = tb
-        self.fb = fb
-        self.split_quality = split_quality  # How good is the split
-
-
 def buildtree(part: Data, scoref=entropy, beta=0):
     """
     t9: Define a new function buildtree. This is a recursive function
@@ -201,12 +180,16 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
     """
 
     if len(part) == 0:
+        return DecisionNode()
+
+    current_score = scoref(part)
+    if current_score == 0:
         return DecisionNode(results=unique_counts(part))  # Pure node
 
     stack = Stack()
     node_stack = Stack()
     stack.push((False, part, None, 0))
-    while not stack.is_empty() > 0:
+    while not stack.is_empty():
         connection_node, data, criteria, split_quality = stack.pop()
         if not connection_node:
             current_score = scoref(data)
@@ -242,6 +225,8 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
                                          split_quality=split_quality))
             if len(data) == len(part):
                 return node_stack.pop()  # Return the root node
+
+    return node_stack.pop()
 
 def classify(tree, values):
     if tree.results is not None:
