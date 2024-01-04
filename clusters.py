@@ -175,10 +175,10 @@ class KMeans:
         self.k = k
         self.clusters = None
 
-    def start_conf(self, iterations=10, best_result=None):
+    def run_n_iter(self, iterations=10, best_result=None):
         for _ in range(iterations):
             initial_centroids = self.centroids_init()
-            centroids, total_distance = self.assign_cluster(initial_centroids)  # Centroids and total distance
+            centroids, total_distance = self.build_cluster(initial_centroids)  # Centroids and total distance
 
             if best_result is None or total_distance < best_result[1]:  # If best result is None or total distance is
                 # greater than best result
@@ -195,7 +195,7 @@ class KMeans:
 
         return centroids
 
-    def assign_cluster(self, centroids, iterations=100, last_matches=None):
+    def build_cluster(self, centroids, iterations=100, last_matches=None):
         matches = None
         distances = None
 
@@ -250,18 +250,16 @@ class KMeans:
                 for j in range(len(avgs)):
                     avgs[j] /= len(matches[centroid])
 
-                    # Update the centroid
-                    centroids[centroid] = avgs
+                # Update the centroid
+                centroids[centroid] = avgs
 
 
 def elbow(data, begin, end, incr, restarts):  # Elbow method to find the best k
     total_distances = []
     for i in range(begin, end, incr):
-        """kmeans = KMeans(data, k=i)
-        _, total_distance = kmeans.start_conf(iterations=restarts)
-        total_distances.append(total_distance)"""
-        _, total_distance = kcluster(data, k=i)
-        total_distances.append(total_distance)
+        kmeans = KMeans(data, k=i)
+        _, total_distance = kmeans.run_n_iter(iterations=restarts)
+        total_distances.append(total_distance ** 2)
     return total_distances
 
 
@@ -284,7 +282,7 @@ def main():
     for centroid in initial_centroids:
         print(centroid)
     print()"""
-    centroids, total_distance = kmeans.assign_cluster(initial_centroids)
+    centroids, total_distance = kmeans.build_cluster(initial_centroids)
     """print("Final centroids: ")
     for centroid in centroids:
         print(centroid)
@@ -296,7 +294,7 @@ def main():
 
     restarts = 10
     kmeans = KMeans(data)
-    centroids, total_distance = kmeans.start_conf(iterations=restarts)
+    centroids, total_distance = kmeans.run_n_iter(iterations=restarts)
     print("%i Restarts -> Distance to centroids: %2.3f\n"
           % (restarts, total_distance))
 

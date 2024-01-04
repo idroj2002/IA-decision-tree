@@ -352,8 +352,8 @@ def main():
     iterative_tree = iterative_build_tree(data)
     print_tree(iterative_tree, headers)"""
     print_trees(headers, data)
-    predict_data(data, 0.5)
-    testing(data, 0.5)
+    predict_data(data, 0.2)
+    testing(data, 0.2)
 
 
 if __name__ == "__main__":
