@@ -1,4 +1,4 @@
-from DataStructures import DecisionNode
+from data_structures import DecisionNode
 
 def prune_tree(root: DecisionNode, threshold: float):
     """
