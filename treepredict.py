@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-import sys
 import collections
-from math import log2
-from typing import List, Tuple
-from Stack import Stack
 from decision_node import DecisionNode
 from prune import prune_tree
+import evaluation
 import random
+import sys
+from math import log2
+from typing import List, Tuple, Union
+
+from DataStructures import Stack, DecisionNode
 
 # Used for typing
 Data = List[List]
@@ -111,7 +113,7 @@ def _split_categorical(prototype: List, column: int, value: str):
     return prototype[column] == value
 
 
-def divideset(part: Data, column: int, value) -> Tuple[Data, Data]:
+def divide_eset(part: Data, column: int, value) -> Tuple[Data, Data]:
     """
     t7: Divide a set on a specific column. Can handle
     numeric or categorical values
@@ -137,7 +139,7 @@ def divideset(part: Data, column: int, value) -> Tuple[Data, Data]:
     return (set1, set2)  # Return both sets
 
 
-def buildtree(part: Data, scoref=entropy, beta=0):
+def build_tree(part: Data, scoref=entropy, beta=0):
     """
     t9: Define a new function buildtree. This is a recursive function
     that builds a decision tree using any of the impurity measures we
@@ -161,7 +163,7 @@ def buildtree(part: Data, scoref=entropy, beta=0):
             column_values.add(row[col])
 
         for value in column_values:
-            (set1, set2) = divideset(part, col, value)
+            (set1, set2) = divide_eset(part, col, value)
             p = float(len(set1)) / len(part)
             gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
             if gain > best_gain and len(set1) > 0 and len(set2) > 0:
@@ -170,12 +172,12 @@ def buildtree(part: Data, scoref=entropy, beta=0):
                 best_sets = (set1, set2)
     if best_gain > beta:
         return DecisionNode(col=best_criteria[0], value=best_criteria[1],
-                            tb=buildtree(best_sets[0]), fb=buildtree(best_sets[1]), split_quality=best_gain)
+                            tb=build_tree(best_sets[0]), fb=build_tree(best_sets[1]), split_quality=best_gain)
     else:
         return DecisionNode(results=unique_counts(part), split_quality=best_gain)
 
 
-def iterative_buildtree(part: Data, scoref=entropy, beta=0):
+def iterative_build_tree(part: Data, scoref=entropy, beta=0):
     """
     t10: Define the iterative version of the function buildtree
     """
@@ -206,7 +208,7 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
                     for row in data:
                         column_values.add(row[col])
                     for value in column_values:
-                        (set1, set2) = divideset(data, col, value)
+                        (set1, set2) = divide_eset(data, col, value)
                         p = float(len(set1)) / len(data)
                         gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
                         if gain > best_gain and len(set1) > 0 and len(set2) > 0:
@@ -227,9 +229,8 @@ def iterative_buildtree(part: Data, scoref=entropy, beta=0):
             if len(data) == len(part):
                 return node_stack.pop()  # Return the root node
 
-    return node_stack.pop()
 
-def classify(tree, values):
+def classify(tree: DecisionNode, values: List):
     if tree.results is not None:
         maximum = max(tree.results.values())
         labels = [k for k, v in tree.results.items() if v == maximum]
@@ -246,7 +247,7 @@ def classify(tree, values):
             return classify(tree.fb, values)
 
 
-def print_tree(tree, headers=None, indent=""):
+def print_tree(tree: DecisionNode, headers: List[str] = None, indent=""):
     """
     t11: Include the following function
     """
@@ -271,28 +272,59 @@ def print_tree(tree, headers=None, indent=""):
         print_tree(tree.fb, headers, indent + "  ")
 
 
-def print_data(headers, data):
-    colsize = 15
-    print('-' * ((colsize + 1) * len(headers) + 1))
+def print_trees(headers: List[str], data: Data):
+    print("----- TREES -----")
+    tree = build_tree(data)
+    print("   - RECURSIVE -   ")
+    print_tree(tree, headers)
+    print("")
+    print("   - ITERATIVE -   ")
+    it_tree = iterative_build_tree(data)
+    print_tree(it_tree, headers)
+
+
+def print_data(headers: List[str], data: Data):
+    col_size = 15
+    print('-' * ((col_size + 1) * len(headers) + 1))
     print("|", end="")
     for header in headers:
-        print(header.center(colsize), end="|")
+        print(header.center(col_size), end="|")
     print("")
-    print('-' * ((colsize + 1) * len(headers) + 1))
+    print('-' * ((col_size + 1) * len(headers) + 1))
     for row in data:
         print("|", end="")
         for value in row:
             if isinstance(value, (int, float)):
-                print(str(value).rjust(colsize), end="|")
+                print(str(value).rjust(col_size), end="|")
             else:
-                print(value.ljust(colsize), end="|")
+                print(value.ljust(col_size), end="|")
         print("")
-    print('-' * ((colsize + 1) * len(headers) + 1))
+    print('-' * ((col_size + 1) * len(headers) + 1))
+
+
+def predict_data(data: Data, test_size: Union[float, int] = 0.2):
+    print("----- PREDICTIONS -----")
+    train, test = evaluation.train_test_split(data, test_size)
+    tree = build_tree(train)
+    for row in test:
+        prediction = classify(tree, row[:-1])
+        print("Prediction for ", row, "is: ", prediction)
+
+
+def testing(data: Data, test_size: Union[float, int] = 0.2):
+    print("----- TESTING -----")
+    train, test = evaluation.train_test_split(data, test_size)
+    tree = build_tree(train)
+    print("Data split between train and test with ", test_size, " test size")
+    train_accuracy = evaluation.get_accuracy(tree, train)
+    print("Accuracy with training data: " + "{:.2f}".format(train_accuracy * 100) + " %")
+    test_accuracy = evaluation.get_accuracy(tree, test)
+    print("Accuracy with testing data: " + "{:.2f}".format(test_accuracy * 100) + " %")
 
 
 def print_pruning(data, headers):
     print("----- PRUNNING -----")
-    tree = buildtree(data)
+    tree = build_tree(data)
     print("  - Not pruned -   ")
     print_tree(tree, headers)
     prune_tree(tree, 0.85)
@@ -321,14 +353,18 @@ def main():
     # print(entropy([data[0]]))
 
     headers, data = read(filename)
+    print_data(headers, data)
 
     print("RECURSIVE BUILDREE")
-    recursive_tree = buildtree(data)
+    recursive_tree = build_tree(data)
     print_tree(recursive_tree, headers)
 
     print("\nITERATIVE BUILDTREE")
-    iterative_tree = iterative_buildtree(data)
+    iterative_tree = iterative_build_tree(data)
     print_tree(iterative_tree, headers)
+    # print_trees(headers, data)
+    predict_data(data, 0.5)
+    testing(data, 0.5)
 
     print("\nPRUNED TREE")
     prune_tree(recursive_tree, 0.8)
