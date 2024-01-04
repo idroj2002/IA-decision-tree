@@ -44,7 +44,7 @@ def cross_validation(dataset, k, agg, seed, scoref, beta, threshold):
     for part in range(k):
         train_data = [data for j, partition in enumerate(partitions) for data in partition if j != part]
         test_data = partitions[part]
-        decision_tree = treepredict.buildtree(train_data, scoref, beta)
+        decision_tree = treepredict.build_tree(train_data, scoref, beta)
         # pruning.prune_tree(decision_tree, threshold)
         accuracy_scores.append(get_accuracy(decision_tree, test_data))
     return agg(accuracy_scores)
