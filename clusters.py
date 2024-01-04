@@ -124,7 +124,7 @@ def print_clust(clust: BiCluster, labels=None, n=0):
 
 
 # ......... K-MEANS ..........
-def kcluster(rows, distance=pearson, k=4):
+def kcluster(rows, distance=euclidean_squared, k=4):  # function from lectures
     # Determine the minimum and maximum values for each point
     ranges = [(min([row[i] for row in rows]),
                max([row[i] for row in rows])) for i in range(len(rows[0]))]
@@ -135,19 +135,24 @@ def kcluster(rows, distance=pearson, k=4):
 
     last_matches = None
     best_matches = [[] for i in range(k)]
+    best_distances = [0 for _ in range(len(rows))]
     for t in range(100):
         # Find which centroid is the closest for each row
         for j in range(len(rows)):
             row = rows[j]
             best_match = 0
+            best_distance = 0.0
             for i in range(k):
                 d = distance(clusters[i], row)
                 if d < distance(clusters[best_match], row):
                     best_match = i
+                    best_distance = d
             best_matches[best_match].append(j)
+            best_distances[j] = best_distance
 
         # If the results are the same as last time, done
-        if best_matches == last_matches: break
+        if best_matches == last_matches:
+            break
         last_matches = best_matches
 
         # Move the centroids to the average of their members
@@ -160,7 +165,7 @@ def kcluster(rows, distance=pearson, k=4):
                 for j in range(len(avgs)):
                     avgs[j] /= len(best_matches[i])
             clusters[i] = avgs
-    return best_matches
+    return best_matches, sum(best_distances)
 
 
 class KMeans:
@@ -175,7 +180,7 @@ class KMeans:
             initial_centroids = self.centroids_init()
             centroids, total_distance = self.assign_cluster(initial_centroids)  # Centroids and total distance
 
-            if best_result is None or total_distance > best_result[1]:  # If best result is None or total distance is
+            if best_result is None or total_distance < best_result[1]:  # If best result is None or total distance is
                 # greater than best result
                 best_result = (centroids, total_distance)  # Update best result
 
@@ -252,8 +257,10 @@ class KMeans:
 def elbow(data, begin, end, incr, restarts):  # Elbow method to find the best k
     total_distances = []
     for i in range(begin, end, incr):
-        kmeans = KMeans(data, k=i)
+        """kmeans = KMeans(data, k=i)
         _, total_distance = kmeans.start_conf(iterations=restarts)
+        total_distances.append(total_distance)"""
+        _, total_distance = kcluster(data, k=i)
         total_distances.append(total_distance)
     return total_distances
 
