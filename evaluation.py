@@ -37,7 +37,7 @@ def mean(values: List[float]):
     return sum(values) / len(values)
 
 
-def cross_validation(dataset: Data, k: int, agg: Callable, scoref, beta, threshold, seed: int = None) -> int:
+def cross_validation(dataset: Data = treepredict.Data, k: int = 1, agg: Callable = mean, scoref = treepredict.entropy, beta = 0, threshold = 0, seed: int = None) -> int:
     if seed:
         random.seed(seed)
     random.shuffle(dataset)  # shuffle the dataset for randomization of the data

@@ -346,11 +346,6 @@ def main():
     headers, data = read(filename)
     print_data(headers, data)
 
-    """recursive_tree = build_tree(data)
-    print_tree(recursive_tree, headers)
-    print("Iterative build_tree:")
-    iterative_tree = iterative_build_tree(data)
-    print_tree(iterative_tree, headers)"""
     print_trees(headers, data)
     predict_data(data, 0.5)
     testing(data, 0.5)
