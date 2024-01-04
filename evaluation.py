@@ -1,6 +1,8 @@
 import random
 import treepredict
-from typing import Union, List
+from typing import Union, List, Callable
+
+Data = List[List]
 
 
 def train_test_split(dataset, test_size: Union[float, int], seed=None):
@@ -35,7 +37,7 @@ def mean(values: List[float]):
     return sum(values) / len(values)
 
 
-def cross_validation(dataset, k, agg, seed, scoref, beta, threshold):
+def cross_validation(dataset: Data, k: int, agg: Callable, scoref, beta, threshold, seed: int = None) -> int:
     if seed:
         random.seed(seed)
     random.shuffle(dataset)  # shuffle the dataset for randomization of the data

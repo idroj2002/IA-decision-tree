@@ -6,7 +6,7 @@ import sys
 from math import log2
 from typing import List, Tuple, Union
 
-from DataStructures import Stack, DecisionNode
+from data_structures import Stack, DecisionNode
 
 # Used for typing
 Data = List[List]
@@ -134,20 +134,20 @@ def divide_eset(part: Data, column: int, value) -> Tuple[Data, Data]:
             set1.append(row)  # Add it to the first set
         else:
             set2.append(row)  # Add it to the second set
-    return (set1, set2)  # Return both sets
+    return set1, set2  # Return both sets
 
 
-def build_tree(part: Data, scoref=entropy, beta=0):
+def build_tree(part: Data, score_f=entropy, beta=0):
     """
-    t9: Define a new function buildtree. This is a recursive function
+    t9: Define a new function build_tree. This is a recursive function
     that builds a decision tree using any of the impurity measures we
-    have seen. The stop criterion is max_s\Delta i(s,t) < \beta
+    have seen. The stop criterion is max_s/Delta i(s,t) < /beta
     """
 
     if len(part) == 0:
         return DecisionNode()
 
-    current_score = scoref(part)
+    current_score = score_f(part)
     if current_score == 0:
         return DecisionNode(results=unique_counts(part))  # Pure node
 
@@ -163,7 +163,7 @@ def build_tree(part: Data, scoref=entropy, beta=0):
         for value in column_values:
             (set1, set2) = divide_eset(part, col, value)
             p = float(len(set1)) / len(part)
-            gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
+            gain = current_score - p * score_f(set1) - (1 - p) * score_f(set2)
             if gain > best_gain and len(set1) > 0 and len(set2) > 0:
                 best_gain = gain
                 best_criteria = (col, value)
@@ -175,9 +175,9 @@ def build_tree(part: Data, scoref=entropy, beta=0):
         return DecisionNode(results=unique_counts(part), split_quality=best_gain)
 
 
-def iterative_build_tree(part: Data, scoref=entropy, beta=0):
+def iterative_build_tree(part: Data, score_f=entropy, beta=0):
     """
-    t10: Define the iterative version of the function buildtree
+    t10: Define the iterative version of the function build_tree
     """
 
     if len(part) == 0:
@@ -189,7 +189,7 @@ def iterative_build_tree(part: Data, scoref=entropy, beta=0):
     while not stack.is_empty() > 0:
         connection_node, data, criteria, split_quality = stack.pop()
         if not connection_node:
-            current_score = scoref(data)
+            current_score = score_f(data)
             if current_score == 0:
                 node_stack.push(DecisionNode(results=unique_counts(data), split_quality=0))  # Pure node
             else:
@@ -204,7 +204,7 @@ def iterative_build_tree(part: Data, scoref=entropy, beta=0):
                     for value in column_values:
                         (set1, set2) = divide_eset(data, col, value)
                         p = float(len(set1)) / len(data)
-                        gain = current_score - p * scoref(set1) - (1 - p) * scoref(set2)
+                        gain = current_score - p * score_f(set1) - (1 - p) * score_f(set2)
                         if gain > best_gain and len(set1) > 0 and len(set2) > 0:
                             best_gain = gain
                             best_criteria = (col, value)
@@ -334,10 +334,10 @@ def main():
     headers, data = read(filename)
     print_data(headers, data)
 
-    """recursive_tree = buildtree(data)
+    """recursive_tree = build_tree(data)
     print_tree(recursive_tree, headers)
-    print("Iterative buildtree:")
-    iterative_tree = iterative_buildtree(data)
+    print("Iterative build_tree:")
+    iterative_tree = iterative_build_tree(data)
     print_tree(iterative_tree, headers)"""
     print_trees(headers, data)
     predict_data(data, 0.5)
