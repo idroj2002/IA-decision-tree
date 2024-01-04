@@ -5,6 +5,7 @@ from math import log2
 from typing import List, Tuple
 from Stack import Stack
 from decision_node import DecisionNode
+from prune import prune_tree
 import random
 
 # Used for typing
@@ -249,6 +250,10 @@ def print_tree(tree, headers=None, indent=""):
     """
     t11: Include the following function
     """
+    if tree is None:
+        print("None")
+        return
+
     # Is this a leaf node?
     if tree.results is not None:
         print(tree.results)
@@ -285,6 +290,17 @@ def print_data(headers, data):
     print('-' * ((colsize + 1) * len(headers) + 1))
 
 
+def print_pruning(data, headers):
+    print("----- PRUNNING -----")
+    tree = buildtree(data)
+    print("  - Not pruned -   ")
+    print_tree(tree, headers)
+    prune_tree(tree, 0.85)
+    print("\n\n")
+    print("   - Pruned -    ")
+    print_tree(tree, headers)
+
+
 def main():
     try:
         filename = sys.argv[1]
@@ -306,11 +322,17 @@ def main():
 
     headers, data = read(filename)
 
+    print("RECURSIVE BUILDREE")
     recursive_tree = buildtree(data)
     print_tree(recursive_tree, headers)
-    print("Iterative buildtree:")
+
+    print("\nITERATIVE BUILDTREE")
     iterative_tree = iterative_buildtree(data)
     print_tree(iterative_tree, headers)
+
+    print("\nPRUNED TREE")
+    prune_tree(recursive_tree, 0.8)
+    print_tree(recursive_tree, headers)
 
 
 if __name__ == "__main__":
